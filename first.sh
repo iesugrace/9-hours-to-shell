@@ -3,5 +3,9 @@ echo -n "current user: "
 whoami
 echo -n "current directory: "
 pwd
-echo "content of current directory: "
+read -p "enter a directory: " dir
+cd "$dir"
+echo -n "new working directory: "
+pwd
+echo "content of the new directory: "
 ls
