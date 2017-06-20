@@ -27,64 +27,80 @@ db=employee.db
 test ! -e "$db" && touch "$db"
 
 #
-# 显示选单
+# 通过一个死循环重复显示主选单，让用户可以重复操作
 #
-echo "┌──────────────────────────────────────────┐"
-echo "│                                          │"
-echo "│        EMPLOYEE MANAGEMENT SYSTEM        │"
-echo "│                                          │"
-echo "└──────────────────────────────────────────┘"
-echo
-echo "        1. Add record"
-echo "        2. List all records"
-echo "        3. Search for records"
-echo "        4. Update records"
-echo "        5. Delete records"
-echo
+while true
+do
+    #
+    # 清屏
+    #
+    clear
+
+    #
+    # 显示选单
+    #
+    echo "┌──────────────────────────────────────────┐"
+    echo "│                                          │"
+    echo "│        EMPLOYEE MANAGEMENT SYSTEM        │"
+    echo "│                                          │"
+    echo "└──────────────────────────────────────────┘"
+    echo
+    echo "        1. Add record"
+    echo "        2. List all records"
+    echo "        3. Search for records"
+    echo "        4. Update records"
+    echo "        5. Delete records"
+    echo
+
+    #
+    # 获取用户输入，如果用户按下了组合键Ctrl-D，read 命令
+    # 将会返回非零，因此break 命令将会被执行，造成循环中止。
+    #
+    read -p "select a number: " choice || break
+    
+    case "$choice" in
+        # 添加记录
+        1)
+            # 依次提示用户输入姓名，性别，年龄，电话
+            read -p " Name: " name
+            read -p "  Sex: " sex
+            read -p "  Age: " age
+            read -p "phone: " phone
+    
+            # 写入数据库
+            echo "$name:$sex:$age:$phone" >> "$db"
+    
+            ;;
+    
+        # 列出所有记录
+        2)
+            #
+            # 用cat 命令读取数据库文件中的内容，用less 命令分屏显示
+            #
+            echo
+            cat "$db" | less
+            ;;
+    
+        # 搜索记录
+        3)
+            ;;
+    
+        # 修改记录
+        4)
+            ;;
+    
+        # 删除记录
+        5)
+            ;;
+    
+        *)
+            echo "must be a number between 1 and 5"
+    esac
 
 #
-# 获取用户输入
+# 主选单循环结束
 #
-read -p "select a number: " choice
-
-case "$choice" in
-    # 添加记录
-    1)
-        # 依次提示用户输入姓名，性别，年龄，电话
-        read -p " Name: " name
-        read -p "  Sex: " sex
-        read -p "  Age: " age
-        read -p "phone: " phone
-
-        # 写入数据库
-        echo "$name:$sex:$age:$phone" >> "$db"
-
-        ;;
-
-    # 列出所有记录
-    2)
-        #
-        # 用cat 命令读取数据库文件中的内容，写到标准输出
-        #
-        echo
-        cat "$db"
-        ;;
-
-    # 搜索记录
-    3)
-        ;;
-
-    # 修改记录
-    4)
-        ;;
-
-    # 删除记录
-    5)
-        ;;
-
-    *)
-        echo "must be a number between 1 and 5"
-esac
+done
 
 #
 # 输出记录总数
