@@ -1,0 +1,94 @@
+#!/bin/bash
+#
+# Author:   Joshua Chen <iesugrace@gmail.com>
+# Date:     2017-06-20 15:52:06
+# Location: Zhuhai
+# Desc: 这是为教学目的设计的项目，是一个精简版的员工信息管理系统。
+#
+# 程序功能：
+# 
+# 通过选单来操作，在主页面提供选项，用户通过选择选项交互式地执行相应的功能。
+# 提供这些功能：添加记录，列出所有记录，搜索记录，修改记录，删除记录。
+# 员工信息存储在一个文本文件中，这个文本文件就是员工信息数据库。
+# 添加记录时，程序依次提示用户输入以下4 个信息：姓名，性别，年龄，电话。
+# 一条员工信息一行，字段之间用冒号分隔，附加到数据库文件的尾部。
+# 用一个名叫 db 的变量来保存数据库文件的路径，这个变量的值可以是 employee.db。
+# 程序退出之前，显示员工记录的总数。
+# 源码要有适当的注释。
+
+#
+# 数据库文件的路径
+#
+db=employee.db
+
+#
+# 如果数据库文件不存在，就创建一个空文件
+#
+test ! -e "$db" && touch "$db"
+
+#
+# 显示选单
+#
+echo "┌──────────────────────────────────────────┐"
+echo "│                                          │"
+echo "│        EMPLOYEE MANAGEMENT SYSTEM        │"
+echo "│                                          │"
+echo "└──────────────────────────────────────────┘"
+echo
+echo "        1. Add record"
+echo "        2. List all records"
+echo "        3. Search for records"
+echo "        4. Update records"
+echo "        5. Delete records"
+echo
+
+#
+# 获取用户输入
+#
+read -p "select a number: " choice
+
+case "$choice" in
+    # 添加记录
+    1)
+        # 依次提示用户输入姓名，性别，年龄，电话
+        read -p " Name: " name
+        read -p "  Sex: " sex
+        read -p "  Age: " age
+        read -p "phone: " phone
+
+        # 写入数据库
+        echo "$name:$sex:$age:$phone" >> "$db"
+
+        ;;
+
+    # 列出所有记录
+    2)
+        #
+        # 用cat 命令读取数据库文件中的内容，写到标准输出
+        #
+        echo
+        cat "$db"
+        ;;
+
+    # 搜索记录
+    3)
+        ;;
+
+    # 修改记录
+    4)
+        ;;
+
+    # 删除记录
+    5)
+        ;;
+
+    *)
+        echo "must be a number between 1 and 5"
+esac
+
+#
+# 输出记录总数
+#
+echo
+echo -n "number of records: "
+wc -l < "$db"
