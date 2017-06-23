@@ -17,9 +17,20 @@
 # 源码要有适当的注释。
 
 #
+# 脚本所在的目录，可用于后续构建正确无误的路径
+#
+dir=$(dirname $0)
+
+#
+# 加载库文件。在库文件前面加上脚本所在的目录，这样，即使
+# 不在eman 所在的目录执行eman，也能正确找到functions 文件。
+#
+. $dir/functions
+
+#
 # 数据库文件的路径
 #
-db=employee.db
+db=$dir/employee.db
 
 #
 # 如果数据库文件不存在，就创建一个空文件
@@ -54,21 +65,61 @@ do
 
     #
     # 获取用户输入，如果用户按下了组合键Ctrl-D，read 命令
-    # 将会返回非零，因此break 命令将会被执行，造成循环中止。
+    # 将会返回非零。当read 返回非零时，询问用是否退出，
+    # 用户如果确认，就退出程序，否则就重新显示选单。
     #
-    read -p "select a number: " choice || break
+    read -p "select a number: " choice
+    if test $? -ne 0
+    then
+        if confirm "exit?"
+        then
+            break
+        else
+            continue
+        fi
+    fi
     
     case "$choice" in
         # 添加记录
         1)
-            # 依次提示用户输入姓名，性别，年龄，电话
-            read -p " Name: " name
-            read -p "  Sex: " sex
-            read -p "  Age: " age
-            read -p "phone: " phone
+            #
+            # 用一个死循环来实现连续添加多条记录
+            #
+            while true
+            do
+                #
+                # 清屏
+                #
+                clear
+
+                # 依次提示用户输入姓名，性别，年龄，电话
+                read -p " Name: " name
+                read -p "  Sex: " sex
+                read -p "  Age: " age
+                read -p "phone: " phone
+        
+                #
+                # 输出用户刚刚输入的数据
+                #
+                echo
+                echo "Employee Info:"
+                echo
+                echo "   Name: $name"
+                echo "    Sex: $sex"
+                echo "    Age: $age"
+                echo "  phone: $phone"
+                echo
     
-            # 写入数据库
-            echo "$name:$sex:$age:$phone" >> "$db"
+                #
+                # 用户确认才写数据库。
+                #
+                confirm && echo "$name:$sex:$age:$phone" >> "$db"
+
+                #
+                # 用户不确认继续添加时，退出循环
+                #
+                confirm "add more?" || break
+            done
     
             ;;
     
@@ -117,6 +168,11 @@ do
         *)
             echo "must be a number between 1 and 5"
     esac
+
+    #
+    # 暂停程序
+    #
+    pause
 
 #
 # 主选单循环结束

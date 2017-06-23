@@ -1,0 +1,22 @@
+#
+# 暂停程序，等待用户按回车键
+#
+pause() {
+    read -p "press enter to continue "
+}
+
+#
+# 输出提示信息，读取用户输入
+# 用户输入y 或者Y，就是返回真，否则就返回假。
+# 第一个参数是提示信息，如果没有提供提示信息，
+# 就把提示信息设置为 "confirm? (y/n) "。
+#
+confirm() {
+    test -n "$1" && msg="$1 (y/n) " || msg="confirm? (y/n) "
+    read -p "$msg" ans
+
+    #
+    # 没有使用return 语句，函数会隐式地返回test 命令的返回码
+    #
+    test "$ans" = "y" -o "$ans" = "Y"
+}
