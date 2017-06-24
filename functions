@@ -20,3 +20,17 @@ confirm() {
     #
     test "$ans" = "y" -o "$ans" = "Y"
 }
+
+#
+# 输出帮助信息
+#
+# 函数接受至少一个参数，第一个参数是脚本的路径$0，
+# 函数把第一个参数的前导路径删除，
+# 函数一并输出所有的后续参数，以一个空格分隔
+#
+usage() {
+    test $# -lt 1 && return 1
+    bname=$(basename $1)
+    shift
+    echo "usage: $bname $@"
+}
