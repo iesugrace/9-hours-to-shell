@@ -19,7 +19,7 @@
 #
 # 脚本所在的目录，可用于后续构建正确无误的路径
 #
-dir=$(dirname $0)
+dir=$(dirname "$0")
 
 #
 # 加载库文件。在库文件前面加上脚本所在的目录，这样，即使
@@ -28,14 +28,55 @@ dir=$(dirname $0)
 . $dir/functions
 
 #
-# 数据库文件的路径
+# 参数检查
+# 如果参数不正确，就输出使用帮助，退出程序，返回1
 #
-db=$dir/employee.db
+if test $# -ne 1
+then
+    usage "$0" file >&2
+    exit 1
+fi
 
 #
-# 如果数据库文件不存在，就创建一个空文件
+# 数据库文件的路径来自第一个命令行参数
 #
-test ! -e "$db" && touch "$db"
+db=$1
+
+#
+# 检查数据库文件
+# 如果文件已经存在，但不是常规文件，或不能写，
+# 则输出错误信息，退出程序，返回1。
+#
+if test -e "$db"
+then
+    if test ! -f "$db" -o ! -w "$db"
+    then
+        echo "file exists, but not a regular file or not writable." >&2
+        exit 1
+    fi
+fi
+
+#
+# 如果数据库文件不存在，就询问用户是否创建，
+# 用户确认，就创建一个空文件，否则就退出程序，返回0。
+# 如果创建文件失败，就输出错误信息，退出程序，返回1。
+#
+if test ! -e "$db"
+then
+    if confirm "$db not exists, create?"
+    then
+        #
+        # 感叹号代表“如果touch 命令失败”
+        #
+        if ! touch "$db" &>/dev/null
+        then
+            echo "failed to create $db."
+            exit 1
+        fi
+    else
+        exit 0
+    fi
+fi
 
 #
 # 通过一个死循环重复显示主选单，让用户可以重复操作
