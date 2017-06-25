@@ -79,18 +79,9 @@ then
 fi
 
 #
-# 通过一个死循环重复显示主选单，让用户可以重复操作
+# 显示头部信息
 #
-while true
-do
-    #
-    # 清屏
-    #
-    clear
-
-    #
-    # 显示选单
-    #
+show_header() {
     echo "┌──────────────────────────────────────────┐"
     echo "│                                          │"
     echo "│        EMPLOYEE MANAGEMENT SYSTEM        │"
@@ -103,6 +94,155 @@ do
     echo "        4. Update records"
     echo "        5. Delete records"
     echo
+}
+
+#
+# 添加一条记录
+#
+add_one() {
+    # 依次提示用户输入姓名，性别，年龄，电话
+    read -p " Name: " name
+    read -p "  Sex: " sex
+    read -p "  Age: " age
+    read -p "phone: " phone
+
+    #
+    # 输出用户刚刚输入的数据
+    #
+    echo
+    echo "Employee Info:"
+    echo
+    echo "   Name: $name"
+    echo "    Sex: $sex"
+    echo "    Age: $age"
+    echo "  phone: $phone"
+    echo
+
+    #
+    # 用户确认才写数据库。
+    #
+    confirm && echo "$name:$sex:$age:$phone" >> "$db"
+}
+
+#
+# 搜索记录
+#
+search() {
+    read -p "pattern: " pat
+    grep -E "$pat" "$db"
+}
+
+#
+# 修改一条记录
+#
+update_one() {
+    # 原有的数据
+    set -- $(echo "$1" | sed 's/:/ /g')
+
+    # 依次提示用户输入姓名，性别，年龄，电话
+    # 把原有的数据一并输出，作为用户的参考
+    read -p " Name ($1): " name
+    read -p "  Sex ($2): " sex
+    read -p "  Age ($3): " age
+    read -p "phone ($4): " phone
+
+    #
+    # 输出用户刚刚输入的数据
+    #
+    echo
+    echo "Employee Info:"
+    echo
+    echo "   Name: $name"
+    echo "    Sex: $sex"
+    echo "    Age: $age"
+    echo "  phone: $phone"
+    echo
+
+    #
+    # 用户确认才写数据库。
+    #
+    if confirm
+    then
+        #
+        # 删除旧数据，-f 选项表示不确认
+        #
+        delete_one "$line" -f
+
+        #
+        # 添加新数据
+        #
+        echo "$name:$sex:$age:$phone" >> "$db"
+    fi
+}
+
+#
+# 删除一条记录
+#
+delete_one() {
+    #
+    # 避免与外面的tmpfile 冲突
+    #
+    local tmpfile
+    ok=yes
+
+    #
+    # 如果第二个参数是 -f，就不问用户确认
+    #
+    if test "$2" != '-f'
+    then
+        echo "$1" | replace_colon
+        confirm "delete?" && ok=yes || ok=no
+    fi
+
+    if test "$ok" = yes
+    then
+        #
+        # 不能直接把grep 命令的结果重定向回 "$db" 文件
+        # 否则会使得 "$db" 中所有数据丢失，因此使用临时文件。
+        #
+        tmpfile=$(mktemp)
+        grep -vF "$line" "$db" >$tmpfile
+        cp -f $tmpfile "$db"
+        rm -f $tmpfile
+    fi
+}
+
+#
+# 把标准输入中的冒号替换成空格
+#
+replace_colon() {
+    sed 's/:/ /g'
+}
+
+#
+# 退出之前输出记录总数
+#
+exit_handler() {
+    echo
+    echo -n "number of records: "
+    wc -l < "$db"
+    exit
+}
+
+#
+# 设置信号处理函数
+#
+trap exit_handler sigint sigquit
+
+#
+# 通过一个死循环重复显示主选单，让用户可以重复操作
+#
+while true
+do
+    #
+    # 清屏
+    #
+    clear
+
+    #
+    # 显示选单
+    #
+    show_header
 
     #
     # 获取用户输入，如果用户按下了组合键Ctrl-D，read 命令
@@ -128,33 +268,8 @@ do
             #
             while true
             do
-                #
-                # 清屏
-                #
                 clear
-
-                # 依次提示用户输入姓名，性别，年龄，电话
-                read -p " Name: " name
-                read -p "  Sex: " sex
-                read -p "  Age: " age
-                read -p "phone: " phone
-        
-                #
-                # 输出用户刚刚输入的数据
-                #
-                echo
-                echo "Employee Info:"
-                echo
-                echo "   Name: $name"
-                echo "    Sex: $sex"
-                echo "    Age: $age"
-                echo "  phone: $phone"
-                echo
-    
-                #
-                # 用户确认才写数据库。
-                #
-                confirm && echo "$name:$sex:$age:$phone" >> "$db"
+                add_one
 
                 #
                 # 用户不确认继续添加时，退出循环
@@ -175,7 +290,7 @@ do
             #
             # 用空格取代冒号
             #
-            sed 's/:/ /g' | \
+            replace_colon | \
 
             #
             # 先按性别排序，再按年龄排序
@@ -196,14 +311,33 @@ do
     
         # 搜索记录
         3)
+            tmpfile=$(mktemp)
+            search | replace_colon | column -t >$tmpfile
+            less < $tmpfile
+            rm -f $tmpfile
             ;;
     
         # 修改记录
         4)
+            tmpfile=$(mktemp)
+            search >$tmpfile
+            while read -u3 line
+            do
+                clear
+                update_one "$line"
+            done 3<$tmpfile
+            rm $tmpfile
             ;;
     
         # 删除记录
         5)
+            tmpfile=$(mktemp)
+            search >$tmpfile
+            while read -u3 line
+            do
+                delete_one "$line"
+            done 3<$tmpfile
+            rm $tmpfile
             ;;
     
         *)
@@ -220,9 +354,4 @@ do
 #
 done
 
-#
-# 输出记录总数
-#
-echo
-echo -n "number of records: "
-wc -l < "$db"
+exit_handler
